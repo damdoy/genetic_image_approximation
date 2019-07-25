@@ -10,4 +10,4 @@ As such, the images will slowly get closer to the reference image
 
 ## Examples:
 
-![example_matterhorn](examples/example_matterhorn.png)
+![origina](examples/matterhorn2_small.png) ![circles](examples/matterhorn2_small_circles.png) ![tris](examples/matterhorn2_small_tris.png)

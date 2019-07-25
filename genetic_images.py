@@ -7,6 +7,7 @@ import numpy as np
 import cProfile
 import copy
 from parameters import *
+from skimage.filter import gaussian_filter
 
 master = Tk()
 
@@ -31,7 +32,12 @@ def read_img(filename):
 def create_population(pop_size, circles_size, img_size_x, img_size_y):
    pop = []
    for i in range(0, pop_size):
-      si = ShapeImage(img_size_x, img_size_y, circle_transparency)
+      if shape_type == SHAPE_TYPE_CIRCLE:
+         si = ShapeImage_Circle(img_size_x, img_size_y, circle_transparency)
+      elif shape_type == SHAPE_TYPE_TRIANGLE:
+         si = ShapeImage_Tri(img_size_x, img_size_y, circle_transparency)
+      elif shape_type == SHAPE_TYPE_SQUARE:
+         si = ShapeImage_Square(img_size_x, img_size_y, circle_transparency)
       for j in range(0, circles_size):
          si.add_random_element()
       pop.append(si)
@@ -136,6 +142,11 @@ bitmap_reference = np.array(bitmap_reference) #transform bitmap to numpy array
 canvas_width = len(bitmap_reference)
 canvas_height = len(bitmap_reference[0])
 
+#apply gaussian blur (helps approx)
+bitmap_reference = bitmap_reference.astype(float)
+bitmap_reference = gaussian_filter(bitmap_reference, sigma=gaussian_blur_reference_image_sigma, multichannel=True)
+bitmap_reference = bitmap_reference.astype(int)
+
 #gui for display
 w = Canvas(master, width=canvas_width, height=canvas_height)
 w.pack()
@@ -160,7 +171,7 @@ for i in range(0, 30000):
    pop = genetic_iteration_copy_mutate(pop, nb_elite, bitmap_reference, fit_results)
    fit_results = get_fitness(pop, bitmap_reference)
    print("iteration: "+str(i))
-   print("nb_circ: "+str(len(pop[fit_results[0][0]].lst_circles)))
+   print("nb_circ: "+str(len(pop[fit_results[0][0]].lst_elements)))
    print(fit_results)
    if(last_best > fit_results[0][1] and i%10 == 0):
       last_best = fit_results[0][1]
