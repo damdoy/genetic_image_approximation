@@ -10,4 +10,6 @@ As such, the images will slowly get closer to the reference image
 
 ## Examples:
 
-![origina](examples/matterhorn2_small.png) ![circles](examples/matterhorn2_small_circles.png) ![tris](examples/matterhorn2_small_tris.png)
+![original](examples/matterhorn2_small.png) ![circles](examples/matterhorn2_small_circles.png) ![tris](examples/matterhorn2_small_tris.png) ![squares](examples/matterhorn2_small_squares.png)
+
+![original](examples/bird_small.png) ![circles](examples/bird_small_circles.png) ![tris](examples/bird_small_tris.png) ![squares](examples/bird_small_squares.png)

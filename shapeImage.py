@@ -35,7 +35,7 @@ class Circle(Shape):
       #apply gaussian random mutation
       self.centre[0] = clamp(int( self.centre[0] + (random.gauss(0,1)*15)*mutation_rate ), 0, self.max_size[0])
       self.centre[1] = clamp(int( self.centre[1] + (random.gauss(0,1)*15)*mutation_rate ), 0, self.max_size[1])
-      self.radius = clamp(int( self.radius + (random.gauss(0,1)*10)*mutation_rate ), 1, max_circle_size)
+      self.radius = clamp(int( self.radius + (random.gauss(0,1)*10)*mutation_rate ), 1, max_circle_radius)
 
       col_to_update = int(random.random()*4) #only update one of the colours
 
@@ -56,7 +56,7 @@ class Circle_B_W(Circle):
       #apply gaussian random mutation
       self.centre[0] = clamp(int( self.centre[0] + (random.gauss(0,1)*15)*mutation_rate ), 0, self.max_size[0])
       self.centre[1] = clamp(int( self.centre[1] + (random.gauss(0,1)*15)*mutation_rate ), 0, self.max_size[1])
-      self.radius = clamp(int( self.radius + (random.gauss(0,1)*10)*mutation_rate ), 1, max_circle_size)
+      self.radius = clamp(int( self.radius + (random.gauss(0,1)*10)*mutation_rate ), 1, max_circle_radius)
 
       col_to_update = int(random.random()*2) #either colour or alpha
 
@@ -139,14 +139,14 @@ class ShapeImage(object):
 
    #create a duplicate of this image with mutation (slight changes)
    def copy_mutate(self):
-      si = self.__class__(self.size[0], self.size[1], circle_transparency)
+      si = self.__class__(self.size[0], self.size[1], element_transparency)
 
       operation = random.random() #remove/add circle or mutate?
 
       si.lst_elements = copy.deepcopy(self.lst_elements) #create the copy
 
       if(operation < prob_add_del_element): # add or remove a circle from copy
-         if(random.random() < prob_add_vs_del and len(si.lst_elements) < nb_circles_max): # add circle
+         if(random.random() < prob_add_vs_del and len(si.lst_elements) < nb_elements_max): # add circle
             si.add_random_element()
 
          elif(len(si.lst_elements) > 0): #remove circle
@@ -202,12 +202,12 @@ class ShapeImage_Circle(ShapeImage):
       return mask
 
    def add_random_element(self):
-      self.lst_elements.append(Circle(int(self.size[0]*random.random()), int(self.size[1]*random.random()), int(max_circle_size/new_shape_size_divisor*random.random()), int(0xff*random.random()), int(0xff*random.random()), int(0xff*random.random()), self.size[0], self.size[1], int(0xff*random.random())))
+      self.lst_elements.append(Circle(int(self.size[0]*random.random()), int(self.size[1]*random.random()), int(max_circle_radius/new_shape_size_divisor*random.random()), int(0xff*random.random()), int(0xff*random.random()), int(0xff*random.random()), self.size[0], self.size[1], int(0xff*random.random())))
 
    #reproduce two images to have a offpring which is combination of the two images + a random
    # should be images with same amount of circles
    def reproduce_images(self, img2):
-      si = ShapeImage(self.size[0], self.size[1], circle_transparency)
+      si = ShapeImage(self.size[0], self.size[1], element_transparency)
       mutated = 1
       all_col = 1 #update all colours
       for c1, c2 in zip(self.lst_elements, img2.lst_elements):
@@ -219,8 +219,7 @@ class ShapeImage_Circle(ShapeImage):
          interp = random.random()
          new_circle_pos_x = clamp(int( ((1.0-interp)*c1.centre[0]+(interp)*c2.centre[0]) + (random.random()*30-15)*mutation_rate*mutated ), 0, self.size[0])
          new_circle_pos_y = clamp(int( ((1.0-interp)*c1.centre[1]+(interp)*c2.centre[1]) + (random.random()*30-15)*mutation_rate*mutated ), 0, self.size[1])
-         new_circle_radius = clamp(int( ((1.0-interp)*c1.radius+(interp)*c2.radius) + (random.random()*20-10)*mutation_rate*mutated ), 1, max_circle_size)
-         # new_circle_radius = clamp(int( (c1.radius+c2.radius)/2 + (random.random()*30-15)*0*mutated ), 1, max_circle_size)
+         new_circle_radius = clamp(int( ((1.0-interp)*c1.radius+(interp)*c2.radius) + (random.random()*20-10)*mutation_rate*mutated ), 1, max_circle_radius)
 
          col_to_update = int(random.random()*3) #only update one of the colours
 
@@ -256,7 +255,7 @@ class ShapeImage_Tri(ShapeImage):
       alpha = (((tri.points[1][1] - tri.points[2][1])*(x - tri.points[2][0]) + (tri.points[2][0] - tri.points[1][0])*(y - tri.points[2][1])) / ((tri.points[1][1] - tri.points[2][1])*(tri.points[0][0] - tri.points[2][0]) + (tri.points[2][0] - tri.points[1][0])*(tri.points[0][1] - tri.points[2][1])))
       beta = (((tri.points[2][1] - tri.points[0][1])*(x - tri.points[2][0]) + (tri.points[0][0] - tri.points[2][0])*(y - tri.points[2][1])) / ((tri.points[1][1] - tri.points[2][1])*(tri.points[0][0] - tri.points[2][0]) + (tri.points[2][0] - tri.points[1][0])*(tri.points[0][1] - tri.points[2][1])))
       gamma = (-alpha)-beta+1.0
-      mask = (alpha>0)*(beta>0)*(gamma>0)
+      mask = (alpha>=0)*(beta>=0)*(gamma>=0)
       return mask
 
    def add_random_element(self):

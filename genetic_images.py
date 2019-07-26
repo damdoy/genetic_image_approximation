@@ -8,12 +8,18 @@ import cProfile
 import copy
 from parameters import *
 from skimage.filter import gaussian_filter
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 master = Tk()
 
 def compare_bitmaps(bitmap1, bitmap2, size_x, size_y):
-
    return ((bitmap1-bitmap2)**2).mean(axis=None)
+
+def compare_pop_bitmap(bitmap1, pop, size_x, size_y):
+   bitmap_pop = pop.get_bitmap()
+   fitness = compare_bitmaps(bitmap1, bitmap_pop, size_x, size_y)
+   pop.fitness = fitness
 
 def read_img(filename):
    img = Image.open(filename)
@@ -29,16 +35,16 @@ def read_img(filename):
    return ret
 
 #create a population of shapeimage with random parameters
-def create_population(pop_size, circles_size, img_size_x, img_size_y):
+def create_population(pop_size, elem_size, img_size_x, img_size_y):
    pop = []
    for i in range(0, pop_size):
       if shape_type == SHAPE_TYPE_CIRCLE:
-         si = ShapeImage_Circle(img_size_x, img_size_y, circle_transparency)
+         si = ShapeImage_Circle(img_size_x, img_size_y, element_transparency)
       elif shape_type == SHAPE_TYPE_TRIANGLE:
-         si = ShapeImage_Tri(img_size_x, img_size_y, circle_transparency)
+         si = ShapeImage_Tri(img_size_x, img_size_y, element_transparency)
       elif shape_type == SHAPE_TYPE_SQUARE:
-         si = ShapeImage_Square(img_size_x, img_size_y, circle_transparency)
-      for j in range(0, circles_size):
+         si = ShapeImage_Square(img_size_x, img_size_y, element_transparency)
+      for j in range(0, elem_size):
          si.add_random_element()
       pop.append(si)
    return pop
@@ -83,8 +89,6 @@ def genetic_iteration_copy_mutate(pop, nb_elite, bitmap_reference, fit_results):
    for i in range(0, nb_elite):
       new_img = new_pop[i].copy_mutate()
       new_pop.append(new_img)
-      new_img = new_pop[i].copy_mutate()
-      new_pop.append(new_img)
 
    return new_pop
 
@@ -93,13 +97,36 @@ def get_fitness(pop, bitmap_reference):
    pop_size = len(pop)
    fit_results = []
 
+   executor = ThreadPoolExecutor(max_threads)
+   futures = []
    for i in range(0, pop_size):
-      if pop[i].fitness >= 0: #if fitness already calculated, put it in the list
-         fit_results.append((i, pop[i].fitness))
-      else:
-         fitness = compare_bitmaps(bitmap_reference, pop[i].get_bitmap(), len(bitmap_reference), len(bitmap_reference[0]))
-         pop[i].fitness = fitness
-         fit_results.append((i, fitness))
+      if pop[i].fitness < 0: #if fitness already calculated, ignore
+         futures.append( executor.submit(compare_pop_bitmap, bitmap_reference, pop[i], len(bitmap_reference), len(bitmap_reference[0]) ) ) #sends calculation to the thread pool
+
+   for i in range(0, len(futures)):
+      futures[i].result()
+
+   for i in range(0, pop_size):
+      fit_results.append((i, pop[i].fitness))
+
+   def sortSecond(v):
+      return v[1]
+
+   fit_results.sort(key = sortSecond)
+
+   return fit_results
+
+#returns sorted list of fitness for all pop
+def get_fitness_no_threads(pop, bitmap_reference):
+   pop_size = len(pop)
+   fit_results = []
+
+   for i in range(0, pop_size):
+      if pop[i].fitness < 0: #if fitness already calculated, ignore
+         compare_pop_bitmap(bitmap_reference, pop[i], len(bitmap_reference), len(bitmap_reference[0]))
+
+   for i in range(0, pop_size):
+      fit_results.append((i, pop[i].fitness))
 
    def sortSecond(v):
       return v[1]
@@ -153,7 +180,7 @@ w.pack()
 img = PhotoImage(width=canvas_width, height=canvas_height)
 w.create_image((canvas_width/2, canvas_height/2), image=img, state="normal")
 
-initial_pop = create_population(pop_size, nb_circles_initial, canvas_width, canvas_height)
+initial_pop = create_population(pop_size, nb_elements_initial, canvas_width, canvas_height)
 
 fit_results = get_fitness(initial_pop, bitmap_reference)
 
