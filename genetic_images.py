@@ -10,6 +10,7 @@ from parameters import *
 from skimage.filter import gaussian_filter
 import threading
 from concurrent.futures import ThreadPoolExecutor
+import os
 
 master = Tk()
 
@@ -162,6 +163,9 @@ str_image_ref = sys.argv[1]
 
 print("selected image: " + str_image_ref)
 
+if not os.path.exists(save_directory):
+    os.makedirs(save_directory)
+
 bitmap_reference = read_img(str_image_ref)
 
 bitmap_reference = np.array(bitmap_reference) #transform bitmap to numpy array
@@ -198,11 +202,11 @@ for i in range(0, 30000):
    pop = genetic_iteration_copy_mutate(pop, nb_elite, bitmap_reference, fit_results)
    fit_results = get_fitness(pop, bitmap_reference)
    print("iteration: "+str(i))
-   print("nb_circ: "+str(len(pop[fit_results[0][0]].lst_elements)))
+   print("number of shapes: "+str(len(pop[fit_results[0][0]].lst_elements)))
    print(fit_results)
    if(last_best > fit_results[0][1] and i%10 == 0):
       last_best = fit_results[0][1]
-      save(pop[fit_results[0][0]].get_bitmap(), "img/iteration"+str(i)+".png")
+      save(pop[fit_results[0][0]].get_bitmap(), save_directory+"iteration"+str(i)+".png")
 
    if i%10 == 0: #draw every 10 iteration
       # save(pop[fit_results[0][0]].get_bitmap(), "img/iteration"+str(i)+".png")

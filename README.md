@@ -8,6 +8,10 @@ be selected to be duplicated with a small "mutation", gaussian change of their p
 
 As such, the images will slowly get closer to the reference image
 
+## How to run
+
+`python3 genetic_images.py <filename>`
+
 ## Examples:
 
 ![original](examples/matterhorn2_small.png) ![circles](examples/matterhorn2_small_circles.png) ![tris](examples/matterhorn2_small_tris.png) ![squares](examples/matterhorn2_small_squares.png)

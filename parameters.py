@@ -24,3 +24,5 @@ SHAPE_TYPE_CIRCLE = 0
 SHAPE_TYPE_TRIANGLE = 1
 SHAPE_TYPE_SQUARE = 2
 shape_type = SHAPE_TYPE_CIRCLE
+
+save_directory = "img/" #where the images for the iterations will be saved
