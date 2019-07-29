@@ -25,7 +25,6 @@ def compare_pop_bitmap(bitmap1, pop, size_x, size_y):
 def read_img(filename):
    img = Image.open(filename)
    ary = np.array(img)
-   print(ary[125][125])
    ret = []
 
    for x in range(0, len(ary[0])):
