@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import copy
+import math
 from parameters import *
 
 def clamp(val, a, b):
@@ -33,8 +34,8 @@ class Circle(Shape):
 
    def mutate(self):
       #apply gaussian random mutation
-      self.centre[0] = clamp(int( self.centre[0] + (random.gauss(0,1)*15)*mutation_rate ), 0, self.max_size[0])
-      self.centre[1] = clamp(int( self.centre[1] + (random.gauss(0,1)*15)*mutation_rate ), 0, self.max_size[1])
+      self.centre[0] = clamp(int( self.centre[0] + (random.gauss(0,1)*10)*mutation_rate ), 0, self.max_size[0])
+      self.centre[1] = clamp(int( self.centre[1] + (random.gauss(0,1)*10)*mutation_rate ), 0, self.max_size[1])
       self.radius = clamp(int( self.radius + (random.gauss(0,1)*10)*mutation_rate ), 1, max_circle_radius)
 
       col_to_update = int(random.random()*4) #only update one of the colours
@@ -81,7 +82,7 @@ class Tri(Shape):
       #apply gaussian random mutation
       for i in range(3):
          for j in range(2):
-            self.points[i][j] = clamp(int( self.points[i][j] + (random.gauss(0,1)*15)*mutation_rate ), 0, self.max_size[j])
+            self.points[i][j] = clamp(int( self.points[i][j] + (random.gauss(0,1)*10)*mutation_rate ), 0, self.max_size[j])
 
       col_to_update = int(random.random()*4) #only update one of the colours
 
@@ -107,9 +108,9 @@ class Square(Shape):
 
    def mutate(self):
       #apply gaussian random mutation
-      self.point[0] = clamp( int ( self.point[0] + random.gauss(0,1)*15*mutation_rate ), 0, self.max_size[0]-1)
-      self.point[1] = clamp( int ( self.point[1] + random.gauss(0,1)*15*mutation_rate ), 0, self.max_size[1]-1)
-      self.side_size = int ( self.side_size + random.gauss(0,1)*15*mutation_rate )
+      self.point[0] = clamp( int ( self.point[0] + random.gauss(0,1)*10*mutation_rate ), 0, self.max_size[0]-1)
+      self.point[1] = clamp( int ( self.point[1] + random.gauss(0,1)*10*mutation_rate ), 0, self.max_size[1]-1)
+      self.side_size = int ( self.side_size + random.gauss(0,1)*10*mutation_rate )
 
       if self.side_size < 1:
          self.side_size = 1
@@ -130,30 +131,55 @@ class Square(Shape):
       if(col_to_update == 3  or all_col): # alpha
          self.alpha = clamp( int ( self.alpha + random.gauss(0,1)*10*mutation_rate ), 10, 245)
 
+class Point(Shape):
+   def __init__(self, x, y, colour_r, colour_g, colour_b, max_size_x, max_size_y):
+      self.x = x
+      self.y = y
+      self.colour = [colour_r, colour_g, colour_b]
+      self.max_size = [max_size_x, max_size_y]
+
+   def mutate(self):
+      mutation_pos = random.random()
+
+      if(mutation_pos < 0.2): #TODO parameter
+         #apply gaussian random mutation
+         self.x = clamp( int ( self.x + random.gauss(0,1)*5*mutation_rate ), 0, self.max_size[0]-1)
+         self.y = clamp( int ( self.y + random.gauss(0,1)*5*mutation_rate ), 0, self.max_size[1]-1)
+
+      elif mutation_pos >= 0.2:
+         col_to_update = int(random.random()*3) #only update one of the colours
+
+         if(col_to_update == 0  or all_col):
+            self.colour[0] = clamp( int ( self.colour[0] + random.gauss(0,1)*10*mutation_rate ), 0, 255)
+         if(col_to_update == 1  or all_col):
+            self.colour[1] = clamp( int ( self.colour[1] + random.gauss(0,1)*10*mutation_rate ), 0, 255)
+         if(col_to_update == 2  or all_col):
+            self.colour[2] = clamp( int ( self.colour[2] + random.gauss(0,1)*10*mutation_rate ), 0, 255)
+
 class ShapeImage(object):
    def __init__(self, size_x, size_y, fixed_transparency):
       self.size = (size_x, size_y)
       self.lst_elements = []
       self.fitness = -1
-      self.fixed_transparency = fixed_transparency #-1 means no fixed transparency (use circle alpha), otherwise values from 0 to 1
+      self.fixed_transparency = fixed_transparency #-1 means no fixed transparency (use shape alpha), otherwise values from 0 to 1
 
    #create a duplicate of this image with mutation (slight changes)
    def copy_mutate(self):
       si = self.__class__(self.size[0], self.size[1], element_transparency)
 
-      operation = random.random() #remove/add circle or mutate?
+      operation = random.random() #remove/add shape or mutate?
 
       si.lst_elements = copy.deepcopy(self.lst_elements) #create the copy
 
-      if(operation < prob_add_del_element): # add or remove a circle from copy
-         if(random.random() < prob_add_vs_del and len(si.lst_elements) < nb_elements_max): # add circle
+      if(operation < prob_add_del_element): # add or remove a shape from copy
+         if(random.random() < prob_add_vs_del and len(si.lst_elements) < nb_elements_max): # add shape
             si.add_random_element()
 
-         elif(len(si.lst_elements) > 0): #remove circle
+         elif(len(si.lst_elements) > 0): #remove shape
             idx_to_remove = int(random.random()*len(si.lst_elements))
             del si.lst_elements[idx_to_remove]
 
-      #exchange position of two circle in the copy
+      #exchange position of two element in the copy
       elif operation >= prob_add_del_element and operation <= prob_add_del_element+prob_exchange_elements and len(si.lst_elements) >= 2:
          idx_element_ex = random.randint(0, len(si.lst_elements)-2) #chose index from 0 to len-2 so that it can be swapped with len-1 element
 
@@ -298,6 +324,46 @@ class ShapeImage_Square(ShapeImage):
          size = self.size[1]-top_left_pt[1]
 
       self.lst_elements.append(Square(top_left_pt, size, int(0xff*random.random()), int(0xff*random.random()), int(0xff*random.random()), self.size[0], self.size[1], int(0xff*random.random())))
+
+   #reproduce two images to have a offpring which is combination of the two images + a random
+   # should be images with same amount of circles
+   #TODO
+   def reproduce_images(self, img2):
+      pass
+
+class ShapeImage_Voronoi(ShapeImage):
+
+   def get_bitmap(self):
+      ret_bmp_np = np.ones((self.size[0], self.size[1], 3))*backgroud_colour ##empty image of parameter background colour
+
+      #needs a numpy logical and to create a mask
+      # mask = np.logical_and(np.logical_and(x >= square.point[0], x <= square.point[0]+square.side_size), np.logical_and(y >= square.point[1], y <= square.point[1]+square.side_size))
+      dist_list = []
+
+      dist_min = np.ones((self.size[0], self.size[1]))*100000000000000
+
+      for elem in self.lst_elements:
+         x,y = np.ogrid[0:self.size[0], 0:self.size[1]]
+
+         dist = np.sqrt(np.power(x-elem.x, 2)+np.power(y-elem.y, 2))
+         dist_list.append( dist )
+
+         mask = dist < dist_min
+         mask_rgb = np.repeat(mask[:,:,np.newaxis], 3, axis=2) #have a matrix of true values for the element
+         elem_value = np.where(mask_rgb == [True, True, True], [elem.colour[0], elem.colour[1], elem.colour[2]], [0,0,0])
+         mask_bg = np.multiply(~mask_rgb, ret_bmp_np) #false value will have the background colour
+         ret_bmp_np = mask_bg + elem_value
+
+         dist_min = np.minimum(dist_min, dist)
+
+      return ret_bmp_np
+
+   def add_random_element(self):
+
+      pt_x = (int(self.size[0]*random.random()))
+      pt_y = (int(self.size[1]*random.random()))
+
+      self.lst_elements.append(Point(pt_x, pt_y, int(0xff*random.random()), int(0xff*random.random()), int(0xff*random.random()), self.size[0], self.size[1] ))
 
    #reproduce two images to have a offpring which is combination of the two images + a random
    # should be images with same amount of circles

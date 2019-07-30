@@ -44,6 +44,8 @@ def create_population(pop_size, elem_size, img_size_x, img_size_y):
          si = ShapeImage_Tri(img_size_x, img_size_y, element_transparency)
       elif shape_type == SHAPE_TYPE_SQUARE:
          si = ShapeImage_Square(img_size_x, img_size_y, element_transparency)
+      elif shape_type == SHAPE_TYPE_VORONOI:
+         si = ShapeImage_Voronoi(img_size_x, img_size_y, element_transparency)
       for j in range(0, elem_size):
          si.add_random_element()
       pop.append(si)
