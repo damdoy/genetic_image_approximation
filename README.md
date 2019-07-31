@@ -16,9 +16,12 @@ As such, the image will slowly converge to an "acceptable" solution which will r
 
 ## Examples:
 
-![original](examples/matterhorn2_small.png) ![circles](examples/matterhorn2_small_circles.png) ![tris](examples/matterhorn2_small_tris.png) ![squares](examples/matterhorn2_small_squares.png)
-
-![original](examples/bird_small.png) ![circles](examples/bird_small_circles.png) ![tris](examples/bird_small_tris.png) ![squares](examples/bird_small_squares.png)
+| Original Image  | ![original](examples/matterhorn2_small.png) | ![original](examples/bird_small.png) |
+| -------  | ------- | -------- |
+| Circles  | ![circles](examples/matterhorn2_small_circles.png)  | ![circles](examples/bird_small_circles.png)  |
+| Voronoi  | ![voronoi](examples/matterhorn2_small_voronoi.png)  | ![voronoi](examples/bird_small_voronoi.png)  |
+| Triangles  | ![tris](examples/matterhorn2_small_tris.png)  | ![tris](examples/bird_small_tris.png)  |
+| Squares  | ![squares](examples/matterhorn2_small_squares.png)   | ![squares](examples/bird_small_squares.png)   |
 
 
 ## How to run

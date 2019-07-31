@@ -150,11 +150,11 @@ class Point(Shape):
          col_to_update = int(random.random()*3) #only update one of the colours
 
          if(col_to_update == 0  or all_col):
-            self.colour[0] = clamp( int ( self.colour[0] + random.gauss(0,1)*10*mutation_rate ), 0, 255)
+            self.colour[0] = clamp( int ( self.colour[0] + random.gauss(0,1)*20*mutation_rate ), 0, 255)
          if(col_to_update == 1  or all_col):
-            self.colour[1] = clamp( int ( self.colour[1] + random.gauss(0,1)*10*mutation_rate ), 0, 255)
+            self.colour[1] = clamp( int ( self.colour[1] + random.gauss(0,1)*20*mutation_rate ), 0, 255)
          if(col_to_update == 2  or all_col):
-            self.colour[2] = clamp( int ( self.colour[2] + random.gauss(0,1)*10*mutation_rate ), 0, 255)
+            self.colour[2] = clamp( int ( self.colour[2] + random.gauss(0,1)*20*mutation_rate ), 0, 255)
 
 class ShapeImage(object):
    def __init__(self, size_x, size_y, fixed_transparency):
