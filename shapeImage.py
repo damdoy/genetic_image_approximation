@@ -28,6 +28,7 @@ class Circle(Shape):
       self.colour = [colour_r, colour_g, colour_b]
       self.alpha = np.clip(alpha, 10, 245)
       self.max_size = [max_size_x, max_size_y]
+      self.mask = []
 
    def get_colour(self):
       return self.colour[0]+(self.colour[1]<<8)+(self.colour[2]<<16)
@@ -48,6 +49,8 @@ class Circle(Shape):
          self.colour[2] = clamp( int ( self.colour[2] + random.gauss(0,1)*10*mutation_rate ), 0, 255)
       if(col_to_update == 3  or all_col): # alpha
          self.alpha = clamp( int ( self.alpha + random.gauss(0,1)*10*mutation_rate ), 10, 245)
+
+      self.mask = [] #current mask not valid anymore
 
 class Circle_B_W(Circle):
    def __init__(self, centre_x, centre_y, radius, colour_r, colour_g, colour_b, max_size_x, max_size_y, alpha):
@@ -74,6 +77,7 @@ class Tri(Shape):
       self.colour = [colour_r, colour_g, colour_b]
       self.alpha = np.clip(alpha, 10, 245)
       self.max_size = [max_size_x, max_size_y]
+      self.mask = []
 
    def get_colour(self):
       return self.colour[0]+(self.colour[1]<<8)+(self.colour[2]<<16)
@@ -95,6 +99,8 @@ class Tri(Shape):
       if(col_to_update == 3  or all_col): # alpha
          self.alpha = clamp( int ( self.alpha + random.gauss(0,1)*10*mutation_rate ), 10, 245)
 
+      self.mask = [] #current mask not valid anymore
+
 class Square(Shape):
    def __init__(self, pt_top_left, side_size, colour_r, colour_g, colour_b, max_size_x, max_size_y, alpha):
       self.point = pt_top_left
@@ -102,6 +108,7 @@ class Square(Shape):
       self.colour = [colour_r, colour_g, colour_b]
       self.alpha = np.clip(alpha, 10, 245)
       self.max_size = [max_size_x, max_size_y]
+      self.mask = []
 
    def get_colour(self):
       return self.colour[0]+(self.colour[1]<<8)+(self.colour[2]<<16)
@@ -130,6 +137,8 @@ class Square(Shape):
          self.colour[2] = clamp( int ( self.colour[2] + random.gauss(0,1)*10*mutation_rate ), 0, 255)
       if(col_to_update == 3  or all_col): # alpha
          self.alpha = clamp( int ( self.alpha + random.gauss(0,1)*10*mutation_rate ), 10, 245)
+
+      self.mask = [] #current mask not valid anymore
 
 class Point(Shape):
    def __init__(self, x, y, colour_r, colour_g, colour_b, max_size_x, max_size_y):
@@ -213,7 +222,7 @@ class ShapeImage(object):
          else: #use transparency of the element
             elem_value = np.clip((elem.alpha/255.0)*elem_value+(1.0-(elem.alpha/255.0))*mask_bg_shape, 0, 255)
 
-            ret_bmp_np = elem_value + mask_bg
+         ret_bmp_np = elem_value + mask_bg
 
       return ret_bmp_np
 
@@ -221,11 +230,16 @@ class ShapeImage(object):
 class ShapeImage_Circle(ShapeImage):
 
    def get_mask_matrix(self, circ):
-      #get coords for the circle
-      y,x = np.ogrid[-circ.centre[0]:self.size[0]-circ.centre[0], -circ.centre[1]:self.size[1]-circ.centre[1]]
 
-      mask = x*x + y*y <= circ.radius*circ.radius
-      return mask
+      if circ.mask != []:
+         return circ.mask
+      else:
+         #get coords for the circle
+         y,x = np.ogrid[-circ.centre[0]:self.size[0]-circ.centre[0], -circ.centre[1]:self.size[1]-circ.centre[1]]
+
+         mask = x*x + y*y <= circ.radius*circ.radius
+         circ.mask = mask; #save the mask
+         return mask
 
    def add_random_element(self):
       self.lst_elements.append(Circle(int(self.size[0]*random.random()), int(self.size[1]*random.random()), int(max_circle_radius/new_shape_size_divisor*random.random()), int(0xff*random.random()), int(0xff*random.random()), int(0xff*random.random()), self.size[0], self.size[1], int(0xff*random.random())))
@@ -265,24 +279,20 @@ class ShapeImage_Circle(ShapeImage):
 
 class ShapeImage_Tri(ShapeImage):
 
-   #barycentric coord, from https://stackoverflow.com/questions/13300904/determine-whether-point-lies-inside-triangle
-   def is_pt_in_tri(self, pt, pts_tri):
-      alpha = ((pts_tri[1][1] - pts_tri[2][1])*(pt[0] - pts_tri[2][0]) + (pts_tri[2][0] - pts_tri[1][0])*(pt[1] - pts_tri[2][1])) / ((pts_tri[1][1] - pts_tri[2][1])*(pts_tri[0][0] - pts_tri[2][0]) + (pts_tri[2][0] - pts_tri[1][0])*(pts_tri[0][1] - pts_tri[2][1]));
-      beta = ((pts_tri[2][1] - pts_tri[0][1])*(pt[0] - pts_tri[2][0]) + (pts_tri[0][0] - pts_tri[2][0])*(pt[1] - pts_tri[2][1])) / ((pts_tri[1][1] - pts_tri[2][1])*(pts_tri[0][0] - pts_tri[2][0]) + (pts_tri[2][0] - pts_tri[1][0])*(pts_tri[0][1] - pts_tri[2][1]));
-      gamma = 1.0 - alpha - beta;
-
-      return (alpha > 0) and (beta > 0) and (gamma > 0)
-
    def get_mask_matrix(self, tri):
-      #get coords for the circle
-      x,y = np.ogrid[0:self.size[0], 0:self.size[1]]
 
-      # mask = self.is_pt_in_tri([x,y], tri.points)
-      alpha = (((tri.points[1][1] - tri.points[2][1])*(x - tri.points[2][0]) + (tri.points[2][0] - tri.points[1][0])*(y - tri.points[2][1])) / ((tri.points[1][1] - tri.points[2][1])*(tri.points[0][0] - tri.points[2][0]) + (tri.points[2][0] - tri.points[1][0])*(tri.points[0][1] - tri.points[2][1])))
-      beta = (((tri.points[2][1] - tri.points[0][1])*(x - tri.points[2][0]) + (tri.points[0][0] - tri.points[2][0])*(y - tri.points[2][1])) / ((tri.points[1][1] - tri.points[2][1])*(tri.points[0][0] - tri.points[2][0]) + (tri.points[2][0] - tri.points[1][0])*(tri.points[0][1] - tri.points[2][1])))
-      gamma = (-alpha)-beta+1.0
-      mask = (alpha>=0)*(beta>=0)*(gamma>=0)
-      return mask
+      if tri.mask != []:
+         return tri.mask
+      else:
+         #barycentric coord, from https://stackoverflow.com/questions/13300904/determine-whether-point-lies-inside-triangle
+         x,y = np.ogrid[0:self.size[0], 0:self.size[1]]
+
+         alpha = (((tri.points[1][1] - tri.points[2][1])*(x - tri.points[2][0]) + (tri.points[2][0] - tri.points[1][0])*(y - tri.points[2][1])) / ((tri.points[1][1] - tri.points[2][1])*(tri.points[0][0] - tri.points[2][0]) + (tri.points[2][0] - tri.points[1][0])*(tri.points[0][1] - tri.points[2][1])))
+         beta = (((tri.points[2][1] - tri.points[0][1])*(x - tri.points[2][0]) + (tri.points[0][0] - tri.points[2][0])*(y - tri.points[2][1])) / ((tri.points[1][1] - tri.points[2][1])*(tri.points[0][0] - tri.points[2][0]) + (tri.points[2][0] - tri.points[1][0])*(tri.points[0][1] - tri.points[2][1])))
+         gamma = (-alpha)-beta+1.0
+         mask = (alpha>=0)*(beta>=0)*(gamma>=0)
+         tri.mask = mask
+         return mask
 
    def add_random_element(self):
 
@@ -304,12 +314,17 @@ class ShapeImage_Tri(ShapeImage):
 class ShapeImage_Square(ShapeImage):
 
    def get_mask_matrix(self, square):
-      #get coords for the circle
-      x,y = np.ogrid[0:self.size[0], 0:self.size[1]]
 
-      #needs a numpy logical and to create a mask
-      mask = np.logical_and(np.logical_and(x >= square.point[0], x <= square.point[0]+square.side_size), np.logical_and(y >= square.point[1], y <= square.point[1]+square.side_size))
-      return mask
+      if square.mask != []:
+         return square.mask
+      else:
+         #get coords for the square (cells between four lines)
+         x,y = np.ogrid[0:self.size[0], 0:self.size[1]]
+
+         #needs a numpy logical and to create a mask
+         mask = np.logical_and(np.logical_and(x >= square.point[0], x <= square.point[0]+square.side_size), np.logical_and(y >= square.point[1], y <= square.point[1]+square.side_size))
+         square.mask = mask
+         return mask
 
    def add_random_element(self):
 
