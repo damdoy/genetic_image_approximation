@@ -144,6 +144,7 @@ class Square(Shape):
          self.alpha = clamp( int ( self.alpha + random.gauss(0,1)*10*mutation_rate ), 10, 245)
 
       self.mask = [] #current mask not valid anymore
+      self.partial_computation = []
 
 class Point(Shape):
    def __init__(self, x, y, colour_r, colour_g, colour_b, max_size_x, max_size_y):
@@ -151,6 +152,8 @@ class Point(Shape):
       self.y = y
       self.colour = [colour_r, colour_g, colour_b]
       self.max_size = [max_size_x, max_size_y]
+      self.partial_computation = [] #keeps the actual approximate image up to this shape
+      self.dist_min = [] #keeps minimal distance of actual approximate voronoi
 
    def mutate(self):
       mutation_pos = random.random()
@@ -169,6 +172,9 @@ class Point(Shape):
             self.colour[1] = clamp( int ( self.colour[1] + random.gauss(0,1)*20*mutation_rate ), 0, 255)
          if(col_to_update == 2  or all_col):
             self.colour[2] = clamp( int ( self.colour[2] + random.gauss(0,1)*20*mutation_rate ), 0, 255)
+
+      self.partial_computation = []
+      self.dist_min = []
 
 class ShapeImage(object):
    def __init__(self, size_x, size_y, fixed_transparency):
@@ -376,18 +382,27 @@ class ShapeImage_Voronoi(ShapeImage):
       dist_min = np.ones((self.size[0], self.size[1]))*100000000000000
 
       for elem in self.lst_elements:
-         x,y = np.ogrid[0:self.size[0], 0:self.size[1]]
 
-         dist = np.sqrt(np.power(x-elem.x, 2)+np.power(y-elem.y, 2))
-         dist_list.append( dist )
+         if elem.partial_computation != []:
+            dist_min = elem.dist_min
+            ret_bmp_np = elem.partial_computation
+         else:
 
-         mask = dist < dist_min
-         mask_rgb = np.repeat(mask[:,:,np.newaxis], 3, axis=2) #have a matrix of true values for the element
-         elem_value = np.where(mask_rgb == [True, True, True], [elem.colour[0], elem.colour[1], elem.colour[2]], [0,0,0])
-         mask_bg = np.multiply(~mask_rgb, ret_bmp_np) #false value will have the background colour
-         ret_bmp_np = mask_bg + elem_value
+            x,y = np.ogrid[0:self.size[0], 0:self.size[1]]
 
-         dist_min = np.minimum(dist_min, dist)
+            dist = np.sqrt(np.power(x-elem.x, 2)+np.power(y-elem.y, 2))
+            dist_list.append( dist )
+
+            mask = dist < dist_min
+            mask_rgb = np.repeat(mask[:,:,np.newaxis], 3, axis=2) #have a matrix of true values for the element
+            elem_value = np.where(mask_rgb == [True, True, True], [elem.colour[0], elem.colour[1], elem.colour[2]], [0,0,0])
+            mask_bg = np.multiply(~mask_rgb, ret_bmp_np) #false value will have the background colour
+            ret_bmp_np = mask_bg + elem_value
+
+            dist_min = np.minimum(dist_min, dist)
+
+            elem.partial_computation = ret_bmp_np
+            elem.dist_min = dist_min
 
       return ret_bmp_np
 
