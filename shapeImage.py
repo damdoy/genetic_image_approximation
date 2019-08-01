@@ -28,7 +28,8 @@ class Circle(Shape):
       self.colour = [colour_r, colour_g, colour_b]
       self.alpha = np.clip(alpha, 10, 245)
       self.max_size = [max_size_x, max_size_y]
-      self.mask = []
+      self.mask = [] # keeps the mask of the shape to not calculate it mulitple time
+      self.partial_computation = [] #keeps the actual approximate image up to this shape
 
    def get_colour(self):
       return self.colour[0]+(self.colour[1]<<8)+(self.colour[2]<<16)
@@ -51,6 +52,7 @@ class Circle(Shape):
          self.alpha = clamp( int ( self.alpha + random.gauss(0,1)*10*mutation_rate ), 10, 245)
 
       self.mask = [] #current mask not valid anymore
+      self.partial_computation = []
 
 class Circle_B_W(Circle):
    def __init__(self, centre_x, centre_y, radius, colour_r, colour_g, colour_b, max_size_x, max_size_y, alpha):
@@ -77,7 +79,8 @@ class Tri(Shape):
       self.colour = [colour_r, colour_g, colour_b]
       self.alpha = np.clip(alpha, 10, 245)
       self.max_size = [max_size_x, max_size_y]
-      self.mask = []
+      self.mask = [] # keeps the mask of the shape to not calculate it mulitple time
+      self.partial_computation = [] #keeps the actual approximate image up to this shape
 
    def get_colour(self):
       return self.colour[0]+(self.colour[1]<<8)+(self.colour[2]<<16)
@@ -100,6 +103,7 @@ class Tri(Shape):
          self.alpha = clamp( int ( self.alpha + random.gauss(0,1)*10*mutation_rate ), 10, 245)
 
       self.mask = [] #current mask not valid anymore
+      self.partial_computation = []
 
 class Square(Shape):
    def __init__(self, pt_top_left, side_size, colour_r, colour_g, colour_b, max_size_x, max_size_y, alpha):
@@ -108,7 +112,8 @@ class Square(Shape):
       self.colour = [colour_r, colour_g, colour_b]
       self.alpha = np.clip(alpha, 10, 245)
       self.max_size = [max_size_x, max_size_y]
-      self.mask = []
+      self.mask = [] # keeps the mask of the shape to not calculate it mulitple time
+      self.partial_computation = [] #keeps the actual approximate image up to this shape
 
    def get_colour(self):
       return self.colour[0]+(self.colour[1]<<8)+(self.colour[2]<<16)
@@ -186,6 +191,9 @@ class ShapeImage(object):
 
          elif(len(si.lst_elements) > 0): #remove shape
             idx_to_remove = int(random.random()*len(si.lst_elements))
+
+            for i in range(idx_to_remove, len(si.lst_elements)):
+               si.lst_elements[i].partial_computation = []
             del si.lst_elements[idx_to_remove]
 
       #exchange position of two element in the copy
@@ -196,10 +204,15 @@ class ShapeImage(object):
          si.lst_elements[idx_element_ex] = si.lst_elements[idx_element_ex+1]
          si.lst_elements[idx_element_ex+1] = elem
 
+         for i in range(idx_element_ex, len(si.lst_elements)):
+            si.lst_elements[i].partial_computation = []
+
       elif len(si.lst_elements) > 0:
          #chose a single circle to mutate
          idx_elem_to_mutate = random.randint(0, len(si.lst_elements)-1)
          si.lst_elements[idx_elem_to_mutate].mutate()
+         for i in range(idx_elem_to_mutate, len(si.lst_elements)):
+            si.lst_elements[i].partial_computation = []
       return si
 
    def get_bitmap(self):
@@ -208,21 +221,26 @@ class ShapeImage(object):
       # for circ in reversed(self.lst_elements): #step the list backward. (draw last elements in the front)
       for elem in self.lst_elements: #step the list backward. (draw last elements in the front)
 
-         mask = self.get_mask_matrix(elem)
-         mask_rgb = np.repeat(mask[:,:,np.newaxis], 3, axis=2) #have a matrix of true values for the element
+         if elem.partial_computation != []:
+            ret_bmp_np = elem.partial_computation
 
-         #fill element colour in the matrix
-         elem_value = np.where(mask_rgb == [True, True, True], [elem.colour[0], elem.colour[1], elem.colour[2]], [0,0,0])
-         mask_bg_shape = np.multiply(mask_rgb, ret_bmp_np)
-         mask_bg = np.multiply(~mask_rgb, ret_bmp_np) #false value will have the background colour
-         # mask_bg_shape = mask_bg+elem_value #add both element and the background
+         else:
+            mask = self.get_mask_matrix(elem)
+            mask_rgb = np.repeat(mask[:,:,np.newaxis], 3, axis=2) #have a matrix of true values for the element
 
-         if self.fixed_transparency >= 0 and self.fixed_transparency <= 1:
-            elem_value = np.clip((1.0-self.fixed_transparency)*elem_value+self.fixed_transparency*mask_bg_shape, 0, 255)
-         else: #use transparency of the element
-            elem_value = np.clip((elem.alpha/255.0)*elem_value+(1.0-(elem.alpha/255.0))*mask_bg_shape, 0, 255)
+            #fill element colour in the matrix
+            elem_value = np.where(mask_rgb == [True, True, True], [elem.colour[0], elem.colour[1], elem.colour[2]], [0,0,0])
+            mask_bg_shape = np.multiply(mask_rgb, ret_bmp_np)
+            mask_bg = np.multiply(~mask_rgb, ret_bmp_np) #false value will have the background colour
+            # mask_bg_shape = mask_bg+elem_value #add both element and the background
 
-         ret_bmp_np = elem_value + mask_bg
+            if self.fixed_transparency >= 0 and self.fixed_transparency <= 1:
+               elem_value = np.clip((1.0-self.fixed_transparency)*elem_value+self.fixed_transparency*mask_bg_shape, 0, 255)
+            else: #use transparency of the element
+               elem_value = np.clip((elem.alpha/255.0)*elem_value+(1.0-(elem.alpha/255.0))*mask_bg_shape, 0, 255)
+
+            ret_bmp_np = elem_value + mask_bg
+            elem.partial_computation = ret_bmp_np
 
       return ret_bmp_np
 
