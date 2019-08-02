@@ -18,6 +18,7 @@ gaussian_blur_reference_image_sigma = 0.5 # sigma 0 = no gaussian blur
 new_shape_size_divisor = 4.0 #how much smaller should new shapes be
 
 max_threads = 1 #select the max numbers of threads that will be used
+optimization_partial_computation = True #keep partial computation of images, faster but consumes lots of memory
 
 ## shape selection
 SHAPE_TYPE_CIRCLE = 0

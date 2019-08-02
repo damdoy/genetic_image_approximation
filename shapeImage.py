@@ -245,8 +245,9 @@ class ShapeImage(object):
             else: #use transparency of the element
                elem_value = np.clip((elem.alpha/255.0)*elem_value+(1.0-(elem.alpha/255.0))*mask_bg_shape, 0, 255)
 
-            ret_bmp_np = elem_value + mask_bg
-            elem.partial_computation = ret_bmp_np
+            if optimization_partial_computation:
+               ret_bmp_np = elem_value + mask_bg
+               elem.partial_computation = ret_bmp_np
 
       return ret_bmp_np
 
@@ -401,8 +402,9 @@ class ShapeImage_Voronoi(ShapeImage):
 
             dist_min = np.minimum(dist_min, dist)
 
-            elem.partial_computation = ret_bmp_np
-            elem.dist_min = dist_min
+            if optimization_partial_computation:
+               elem.partial_computation = ret_bmp_np
+               elem.dist_min = dist_min
 
       return ret_bmp_np
 
