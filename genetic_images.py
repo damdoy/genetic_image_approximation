@@ -157,7 +157,7 @@ def save(bitmap, filename):
    im.save(filename)
 
 if len(sys.argv) != 2:
-   print("should have two parameters")
+   print("Should have a parameter: the path to the image to approximate")
    exit()
 
 str_image_ref = sys.argv[1]
